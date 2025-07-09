@@ -222,32 +222,5 @@ server.registerResource(
   }
 );
 
-// Dynamic resource for a specific country with parameter
-server.registerResource(
-  'country-resource',
-  new ResourceTemplate('countries://{countryName}'),
-  {
-    title: 'Country Resource',
-    description: 'Country info based on dynamic name',
-  },
-  async (uri, { countryName }) => {
-    try {
-      const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
-      const data = await response.json();
-      return {
-        contents: [
-          {
-            uri: uri.href,
-            text: JSON.stringify(data, null, 2),
-            mimeType: 'application/json',
-          },
-        ],
-      };
-    } catch (error) {
-      return { contents: [] };
-    }
-  }
-);
-
 const transport = new StdioServerTransport();
 server.connect(transport);
