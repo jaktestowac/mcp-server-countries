@@ -94,11 +94,12 @@ server.registerTool(
 );
 
 // Register a simple resource without parameters
+
 server.registerResource(
   'greeting-resource',
-  new ResourceTemplate('greeting://general'),
+  new ResourceTemplate('greeting://general', { list: undefined }),
   {
-    title: 'Greeting Resource', // Display name for UI
+    title: 'Greeting Resource',
     description: 'Static greeting resource',
   },
   async () => ({
@@ -111,34 +112,52 @@ server.registerResource(
   })
 );
 
-// Register a simple resource with a parameter
 server.registerResource(
-  'greeting-resource-with-parameter',
-  new ResourceTemplate('greeting://{name}'),
+  'country-resource',
+  new ResourceTemplate('countries://{countryName}'),
   {
-    title: 'Greeting Resource with Parameter',
-    description: 'Dynamic greeting generator',
+    title: 'Country Resource',
+    description: 'Resource to get details of a specific country',
   },
-  async (uri, { name }) => ({
-    contents: [
-      {
-        uri: uri.href,
-        text: `Hello, ${name}!`,
-      },
-    ],
-  })
+  async (uri, { countryName }) => {
+    const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
+    const data = await response.json();
+    return {
+      contents: [
+        {
+          uri: uri.href,
+          text: JSON.stringify(data, null, 2),
+          mimeType: 'application/json',
+        },
+      ],
+    };
+  }
 );
 
 // Register a simple All Country resource
+// ...and the entire list of countries is placed into one giant JSON blob in contents[].text.
+// This creates two problems for clients like Copilot:
+// 🧠 LLM input window is limited — it may truncate or ignore part of the JSON if too large (100+ might be too much for LLM context).
+// 🕵️‍♂️ LLM cannot query individual countries unless they are split into separate URIs.
 server.registerResource(
-  'all-countries',
-  new ResourceTemplate('all-countries://all'),
+  'all-countries-resource',
+  new ResourceTemplate('countries://all', {
+    list: async () => ({
+      resources: [
+        {
+          uri: 'countries://all',
+          name: 'All Countries',
+          description: 'A dynamic list of all countries',
+          mimeType: 'application/json',
+        },
+      ],
+    }),
+  }),
   {
     title: 'All Countries Resource',
     description: 'Dynamic list of all countries',
   },
   async (uri) => {
-    // Get all countries
     try {
       const response = await fetch(
         'https://restcountries.com/v3.1/all?fields=name,capital,region,population,area,flags,languages,currencies'
@@ -147,29 +166,71 @@ server.registerResource(
       return {
         contents: [
           {
-            uri: 'countries://all',
+            uri: uri.href,
             text: JSON.stringify(data, null, 2),
             mimeType: 'application/json',
           },
         ],
       };
     } catch (error) {
-      // Fall through to empty contents
+      return { contents: [] };
     }
-    return { contents: [] };
+  }
+);
+
+server.registerResource(
+  'all-european-countries-resource',
+  new ResourceTemplate('countries://europe', {
+    list: async () => ({
+      resources: [
+        {
+          uri: 'countries://europe',
+          name: 'All European Countries',
+          description: 'Filtered list of countries from Europe',
+          mimeType: 'application/json',
+        },
+      ],
+    }),
+  }),
+  {
+    title: 'European Countries Resource',
+    description: 'Returns a filtered JSON list of European countries only (safe for LLM context)',
+  },
+  async () => {
+    try {
+      const response = await fetch('https://restcountries.com/v3.1/all?fields=name,region');
+      const data = await response.json();
+
+      const europeOnly = data
+        .filter((c: any) => c.region === 'Europe')
+        .map((c: any) => c.name?.common)
+        .filter(Boolean) // remove null/undefined
+        .sort();
+
+      return {
+        contents: [
+          {
+            uri: 'countries://europe',
+            text: JSON.stringify(europeOnly, null, 2),
+            mimeType: 'application/json',
+          },
+        ],
+      };
+    } catch (error) {
+      return { contents: [] };
+    }
   }
 );
 
 // Dynamic resource for a specific country with parameter
 server.registerResource(
   'country-resource',
-  new ResourceTemplate('countries://{countryName}', { list: undefined }),
+  new ResourceTemplate('countries://{countryName}'),
   {
     title: 'Country Resource',
-    description: 'Dynamic country information',
+    description: 'Country info based on dynamic name',
   },
   async (uri, { countryName }) => {
-    // Fetch country data based on the countryName parameter
     try {
       const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
       const data = await response.json();
@@ -178,13 +239,13 @@ server.registerResource(
           {
             uri: uri.href,
             text: JSON.stringify(data, null, 2),
+            mimeType: 'application/json',
           },
         ],
       };
     } catch (error) {
-      // Fall through to empty contents
+      return { contents: [] };
     }
-    return { contents: [] };
   }
 );
 
