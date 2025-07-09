@@ -1,0 +1,17 @@
+{
+  "name": "mcp-server-countries",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "test": "npx -y @modelcontextprotocol/inspector npx -y tsx main.ts"
+  },
+  "keywords": [],
+  "author": "jaktestowac.pl",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.14.0",
+    "zod": "^3.25.67",
+    "typescript": "^5.4.5"
+  }
+}

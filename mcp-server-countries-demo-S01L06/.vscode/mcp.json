@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "mcp-server-countries": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "tsx", "main.ts"]
+    }
+  },
+  "inputs": []
+}
