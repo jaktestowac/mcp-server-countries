@@ -94,131 +94,34 @@ server.registerTool(
 );
 
 // Register a simple resource without parameters
-
 server.registerResource(
-  'greeting-resource',
-  new ResourceTemplate('greeting://general', { list: undefined }),
+  'regions-resource',
+  new ResourceTemplate('regions://all', {
+    list: undefined,
+  }),
   {
-    title: 'Greeting Resource',
-    description: 'Static greeting resource',
+    title: 'All Regions (Static)',
+    description: 'Static resource with regions',
   },
-  async () => ({
-    contents: [
-      {
-        uri: 'greeting://general',
-        text: 'Hello, World!',
-      },
-    ],
-  })
-);
-
-server.registerResource(
-  'country-resource',
-  new ResourceTemplate('countries://{countryName}'),
-  {
-    title: 'Country Resource',
-    description: 'Resource to get details of a specific country',
-  },
-  async (uri, { countryName }) => {
-    const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
-    const data = await response.json();
+  async (uri) => {
+    const data = [
+      { region: 'Europe', avgTemperature: 10 },
+      { region: 'Americas', avgTemperature: 15 },
+      { region: 'Asia', avgTemperature: 20 },
+      { region: 'Africa', avgTemperature: 25 },
+      { region: 'Oceania', avgTemperature: 30 },
+      { region: 'Antarctica', avgTemperature: -5 },
+      { region: 'Polar', avgTemperature: -10 },
+    ];
     return {
       contents: [
         {
-          uri: uri.href,
+          uri: 'regions://all',
           text: JSON.stringify(data, null, 2),
           mimeType: 'application/json',
         },
       ],
     };
-  }
-);
-
-// Register a simple All Country resource
-// ...and the entire list of countries is placed into one giant JSON blob in contents[].text.
-// This creates two problems for clients like Copilot:
-// 🧠 LLM input window is limited — it may truncate or ignore part of the JSON if too large (100+ might be too much for LLM context).
-// 🕵️‍♂️ LLM cannot query individual countries unless they are split into separate URIs.
-server.registerResource(
-  'all-countries-resource',
-  new ResourceTemplate('countries://all', {
-    list: async () => ({
-      resources: [
-        {
-          uri: 'countries://all',
-          name: 'All Countries',
-          description: 'A dynamic list of all countries',
-          mimeType: 'application/json',
-        },
-      ],
-    }),
-  }),
-  {
-    title: 'All Countries Resource',
-    description: 'Dynamic list of all countries',
-  },
-  async (uri) => {
-    try {
-      const response = await fetch(
-        'https://restcountries.com/v3.1/all?fields=name,capital,region,population,area,flags,languages,currencies'
-      );
-      const data = await response.json();
-      return {
-        contents: [
-          {
-            uri: uri.href,
-            text: JSON.stringify(data, null, 2),
-            mimeType: 'application/json',
-          },
-        ],
-      };
-    } catch (error) {
-      return { contents: [] };
-    }
-  }
-);
-
-server.registerResource(
-  'all-european-countries-resource',
-  new ResourceTemplate('countries://europe', {
-    list: async () => ({
-      resources: [
-        {
-          uri: 'countries://europe',
-          name: 'All European Countries',
-          description: 'Filtered list of countries from Europe',
-          mimeType: 'application/json',
-        },
-      ],
-    }),
-  }),
-  {
-    title: 'European Countries Resource',
-    description: 'Returns a filtered JSON list of European countries only (safe for LLM context)',
-  },
-  async () => {
-    try {
-      const response = await fetch('https://restcountries.com/v3.1/all?fields=name,region');
-      const data = await response.json();
-
-      const europeOnly = data
-        .filter((c: any) => c.region === 'Europe')
-        .map((c: any) => c.name?.common)
-        .filter(Boolean) // remove null/undefined
-        .sort();
-
-      return {
-        contents: [
-          {
-            uri: 'countries://europe',
-            text: JSON.stringify(europeOnly, null, 2),
-            mimeType: 'application/json',
-          },
-        ],
-      };
-    } catch (error) {
-      return { contents: [] };
-    }
   }
 );
 
