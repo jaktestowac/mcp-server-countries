@@ -94,6 +94,17 @@ server.registerTool(
 );
 
 // Register a simple resource without parameters
+const regionDataSet = [
+  { region: 'Europe', avgTemperature: 10 },
+  { region: 'Americas', avgTemperature: 15 },
+  { region: 'Asia', avgTemperature: 20 },
+  { region: 'Africa', avgTemperature: 25 },
+  { region: 'Oceania', avgTemperature: 30 },
+  { region: 'Antarctica', avgTemperature: -5 },
+  { region: 'Polar', avgTemperature: -10 },
+  { region: "R'lyeh", avgTemperature: -2 },
+];
+
 server.registerResource(
   'regions-resource',
   new ResourceTemplate('regions://all', {
@@ -104,21 +115,13 @@ server.registerResource(
     description: 'Static resource with regions',
   },
   async (uri) => {
-    const data = [
-      { region: 'Europe', avgTemperature: 10 },
-      { region: 'Americas', avgTemperature: 15 },
-      { region: 'Asia', avgTemperature: 20 },
-      { region: 'Africa', avgTemperature: 25 },
-      { region: 'Oceania', avgTemperature: 30 },
-      { region: 'Antarctica', avgTemperature: -5 },
-      { region: 'Polar', avgTemperature: -10 },
-    ];
+    // This is a static resource, so we return the predefined data
+    const data = regionDataSet;
     return {
       contents: [
         {
           uri: 'regions://all',
           text: JSON.stringify(data, null, 2),
-          mimeType: 'application/json',
         },
       ],
     };
